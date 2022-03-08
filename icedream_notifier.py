@@ -7,7 +7,7 @@ import os
 if os.path.exists('settings_secret.py'):
 	from settings_secret import *
 else:
-	from settings_secret import *
+	from settings import *
 import logging
 from logging.handlers import RotatingFileHandler #просто import logging недостаточно!
 

@@ -28,11 +28,11 @@ logging.basicConfig(handlers = handlers_list, format='%(asctime)s %(name)s line 
 
 
 
-def send_email():
+def send_email(new_page_str):
 	# create message object instance
 	msg = MIMEMultipart()
 
-	message = WATCH_URL
+	message = '<A HREF=' + WATCH_URL + '>' + WATCH_URL + '</A><P>' + new_page_str
 
 	# setup the parameters of the message
 	msg['From'] = FROM_EMAIL
@@ -40,7 +40,7 @@ def send_email():
 	msg['Subject'] = SUBJECT
 
 	# add in the message body
-	msg.attach(MIMEText(message, 'plain'))
+	msg.attach(MIMEText(message, 'html'))
 
 	# create server
 	server = smtplib.SMTP(SMTP_SERVER_PORT)
@@ -71,7 +71,7 @@ try:
 		with open(PAGE_FILENAME, 'r', newline='', encoding ='utf8') as f:
 			last_page_str = f.read()
 		if last_page_str != new_page_str:
-			send_email()
+			send_email(new_page_str)
 		else:
 			logging.debug('No changes')
 		with open(PAGE_FILENAME, 'w', newline='', encoding='utf8') as f:

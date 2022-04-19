@@ -10,6 +10,43 @@ else:
 	from settings import *
 import logging
 from logging.handlers import RotatingFileHandler #просто import logging недостаточно!
+import lxml.etree
+from xmldiff import main, formatting
+
+XSLT = u'''<?xml version="1.0"?>
+<xsl:stylesheet version="1.0"
+xmlns:diff="http://namespaces.shoobx.com/diff"
+xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+
+    <xsl:template match="@diff:insert-formatting">
+        <xsl:attribute name="class">
+          <xsl:value-of select="'insert-formatting'"/>
+        </xsl:attribute>
+    </xsl:template>
+
+    <xsl:template match="diff:delete">
+        <del><xsl:apply-templates /></del>
+    </xsl:template>
+
+    <xsl:template match="diff:insert">
+        <ins><xsl:apply-templates /></ins>
+    </xsl:template>
+
+    <xsl:template match="@* | node()">
+      <xsl:copy>
+        <xsl:apply-templates select="@* | node()"/>
+      </xsl:copy>
+    </xsl:template>
+ </xsl:stylesheet>'''
+XSLT_TEMPLATE = lxml.etree.fromstring(XSLT)
+
+class HTMLFormatter(formatting.XMLFormatter):
+     def render(self, result):
+         transform = lxml.etree.XSLT(XSLT_TEMPLATE)
+         result = transform(result)
+         return super(HTMLFormatter, self).render(result)
+
+formatter=HTMLFormatter(text_tags=('p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'li'), formatting_tags=('b', 'u', 'i', 'strike', 'em', 'super', 'sup', 'sub', 'link', 'a', 'span'))
 
 
 # logger = logging.getLogger(__name__)
@@ -28,11 +65,21 @@ logging.basicConfig(handlers = handlers_list, format='%(asctime)s %(name)s line 
 
 
 
-def send_email(new_page_str):
+def send_email(last_page_str, new_page_str):
 	# create message object instance
 	msg = MIMEMultipart()
+	parser = lxml.etree.HTMLParser()
+	try:
+		last_page_root = lxml.etree.fromstring(last_page_str, parser)[1][1][1] #<section>
+		new_page_root = lxml.etree.fromstring(new_page_str, parser)[1][1][1]  #<section>
+		#diff_page_str = main.diff_texts(last_page_str, new_page_str, diff_options={'fast_match': True}, formatter=formatter)
+		diff_page_str = main.diff_trees(last_page_root, new_page_root, diff_options={'fast_match': True}, formatter=formatter)
+		diff_ok = True
+	except:
+		diff_page_str = new_page_str
+		diff_ok = False
 
-	message = '<A HREF=' + WATCH_URL + '>' + WATCH_URL + '</A><P>' + new_page_str
+	message = '<A HREF=' + WATCH_URL + '>' + WATCH_URL + '</A><P>' + diff_page_str
 
 	# setup the parameters of the message
 	msg['From'] = FROM_EMAIL
@@ -55,7 +102,7 @@ def send_email(new_page_str):
 
 	server.quit()
 
-	logging.info("Successfully sent email to %s:" % (msg['To']))
+	logging.info("Successfully sent email to %s:" % (msg['To']) + 'diff OK: ' + str(diff_ok) )
 
 
 try:
@@ -71,7 +118,7 @@ try:
 		with open(PAGE_FILENAME, 'r', newline='', encoding ='utf8') as f:
 			last_page_str = f.read()
 		if last_page_str != new_page_str:
-			send_email(new_page_str)
+			send_email(last_page_str, new_page_str)
 		else:
 			logging.debug('No changes')
 		with open(PAGE_FILENAME, 'w', newline='', encoding='utf8') as f:

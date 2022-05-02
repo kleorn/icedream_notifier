@@ -68,16 +68,21 @@ logging.basicConfig(handlers = handlers_list, format='%(asctime)s %(name)s line 
 def send_email(last_page_str, new_page_str):
 	# create message object instance
 	msg = MIMEMultipart()
-	parser = lxml.etree.HTMLParser()
-	try:
-		last_page_root = lxml.etree.fromstring(last_page_str, parser)[1][1][1] #<section>
-		new_page_root = lxml.etree.fromstring(new_page_str, parser)[1][1][1]  #<section>
-		#diff_page_str = main.diff_texts(last_page_str, new_page_str, diff_options={'fast_match': True}, formatter=formatter)
-		diff_page_str = main.diff_trees(last_page_root, new_page_root, diff_options={'fast_match': True}, formatter=formatter)
-		diff_ok = True
-	except:
+
+	if CALCULATE_PAGES_DIFF:
+		parser = lxml.etree.HTMLParser()
+		try:
+			last_page_root = lxml.etree.fromstring(last_page_str, parser)[1][1][1] #<section>
+			new_page_root = lxml.etree.fromstring(new_page_str, parser)[1][1][1]  #<section>
+			#diff_page_str = main.diff_texts(last_page_str, new_page_str, diff_options={'fast_match': True}, formatter=formatter)
+			diff_page_str = main.diff_trees(last_page_root, new_page_root, diff_options={'fast_match': True}, formatter=formatter)
+			diff_ok = True
+		except:
+			diff_page_str = new_page_str
+			diff_ok = False
+	else:
 		diff_page_str = new_page_str
-		diff_ok = False
+		diff_ok = 'Disabled'
 
 	message = '<A HREF=' + WATCH_URL + '>' + WATCH_URL + '</A><P>' + diff_page_str
 

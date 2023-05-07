@@ -7,3 +7,4 @@ COPY ./crontab /etc/
 #EXPOSE 8080
 RUN pip install requests lxml xmldiff
 #CMD cd /var/icedream_notifier && python3 main.py
+CMD bash

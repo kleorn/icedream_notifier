@@ -7,4 +7,4 @@
 1. cd icedream_notifier
 1. docker build . --tag icedream_notifier
 1. docker run -v /var/docker_volumes/icedream_notifier:/var/icedream_notifier --restart unless-stopped icedream_notifier
-1. #docker run -it -v /var/docker_volumes/icedream_notifier:/var/icedream_notifier --restart unless-stopped icedream_notifier
+#Старый недоработанный вариант с запуском bash и cron: docker run -it -v /var/docker_volumes/icedream_notifier:/var/icedream_notifier --restart unless-stopped icedream_notifier

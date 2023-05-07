@@ -3,6 +3,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 import smtplib
 import requests
+import time
 import os
 if os.path.exists('settings_secret.py'):
 	from settings_secret import *
@@ -111,23 +112,25 @@ def send_email(last_page_str, new_page_str):
 
 
 try:
-	file_exists = os.path.exists(PAGE_FILENAME)
-	res = requests.get(WATCH_URL)
-	if res.status_code != 200:
-		exit()
-	new_page_str = res.text
-	if not file_exists:
-		with open(PAGE_FILENAME, 'w', newline='', encoding ='utf8') as f:
-			f.write(new_page_str)
-	else:
-		with open(PAGE_FILENAME, 'r', newline='', encoding ='utf8') as f:
-			last_page_str = f.read()
-		if last_page_str != new_page_str:
-			send_email(last_page_str, new_page_str)
+	while True:
+		file_exists = os.path.exists(PAGE_FILENAME)
+		res = requests.get(WATCH_URL)
+		if res.status_code != 200:
+			exit()
+		new_page_str = res.text
+		if not file_exists:
+			with open(PAGE_FILENAME, 'w', newline='', encoding ='utf8') as f:
+				f.write(new_page_str)
 		else:
-			logging.debug('No changes')
-		with open(PAGE_FILENAME, 'w', newline='', encoding='utf8') as f:
-			f.write(new_page_str)
+			with open(PAGE_FILENAME, 'r', newline='', encoding ='utf8') as f:
+				last_page_str = f.read()
+			if last_page_str != new_page_str:
+				send_email(last_page_str, new_page_str)
+			else:
+				logging.debug('No changes')
+			with open(PAGE_FILENAME, 'w', newline='', encoding='utf8') as f:
+				f.write(new_page_str)
+		time.sleep(CHECK_PERIOD_SECONDS)
 
 except Exception as e:
 	logging.error(str(e) + ' ' + str(e.args))
